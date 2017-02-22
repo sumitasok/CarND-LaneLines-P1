@@ -134,13 +134,15 @@ def process_image(image):
     # Keep in mind the origin (x=0, y=0) is in the upper left in image processing
     # you'll find these are not sensible values!!
     # But you'll get a chance to play with them soon in a quiz ;)
-    left_bottom = [120, 539]
-    right_bottom = [850, 539]
-    apex = [490, 220]
+    left_bottom = [0, 539]
+    right_bottom = [900, 539]
+    left_top = [475, 310]
+    right_top = [530, 310]
 
-    fit_left = np.polyfit((left_bottom[0], apex[0]), (left_bottom[1], apex[1]), 1)
-    fit_right = np.polyfit((right_bottom[0], apex[0]), (right_bottom[1], apex[1]), 1)
+    fit_left = np.polyfit((left_bottom[0], left_top[0]), (left_bottom[1], left_top[1]), 1)
+    fit_right = np.polyfit((right_bottom[0], right_top[0]), (right_bottom[1], right_top[1]), 1)
     fit_bottom = np.polyfit((left_bottom[0], right_bottom[0]), (left_bottom[1], right_bottom[1]), 1)
+    fit_top = np.polyfit((left_top[0], right_top[0]), (left_top[1], right_top[1]), 1)
 
     # Mask pixels below the threshold
     color_thresholds = (image[:,:,0] < rgb_threshold[0]) | \
@@ -151,7 +153,13 @@ def process_image(image):
     XX, YY = np.meshgrid(np.arange(0, xsize), np.arange(0, ysize))
     region_thresholds = (YY > (XX*fit_left[0] + fit_left[1])) & \
                         (YY > (XX*fit_right[0] + fit_right[1])) & \
-                        (YY < (XX*fit_bottom[0] + fit_bottom[1]))
+                        (YY < (XX*fit_bottom[0] + fit_bottom[1])) & \
+                        (YY > (XX*fit_top[0] + fit_top[1]))
+
+
+    # region = region_of_interest(image, np.int32([np.array([[100,539], [450, 300], [490, 300], [900,539]])]))
+    # print('This region is:', type(region), 'with dimesions:', region)
+
     # Mask color selection
     color_select[color_thresholds] = [0,0,0]
     # Find where image is both colored right and in the region
