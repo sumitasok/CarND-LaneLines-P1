@@ -114,7 +114,32 @@ def process_image(image):
     # NOTE: The output you return should be a color image (3 channel) for processing video below
     # TODO: put your pipeline here,
     # you should return the final output (image where lines are drawn on lanes)
-    return image
+
+    # Grab the x and y size and make a copy of the image
+    ysize = image.shape[0]
+    xsize = image.shape[1]
+    # Note: always make a copy rather than simply using "="
+    color_select = np.copy(image)
+
+    # Define our color selection criteria
+    # Note: if you run this code, you'll find these are not sensible values!!
+    # But you'll get a chance to play with them soon in a quiz
+    red_threshold = 200
+    green_threshold = 200
+    blue_threshold = 200
+    rgb_threshold = [red_threshold, green_threshold, blue_threshold]
+
+    # Identify pixels below the threshold
+    thresholds = (image[:,:,0] < rgb_threshold[0]) \
+                | (image[:,:,1] < rgb_threshold[1]) \
+                | (image[:,:,2] < rgb_threshold[2])
+    color_select[thresholds] = [0,0,0]
+
+    # Display the image               
+    # plt.imshow(color_select)
+    # plt.show()
+
+    return color_select
 
 white_output = 'white.mp4'
 clip1 = VideoFileClip("solidWhiteRight.mp4")
