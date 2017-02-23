@@ -124,48 +124,71 @@ def process_image(image):
     color_select= np.copy(image)
     line_image = np.copy(image)
 
-    # Define our color criteria
-    red_threshold = 200
-    green_threshold = 200
-    blue_threshold = 200
-    rgb_threshold = [red_threshold, green_threshold, blue_threshold]
+    gray_image = np.copy(image)
+    gray = cv2.cvtColor(gray_image, cv2.COLOR_RGB2GRAY)
 
-    # Define a triangle region of interest (Note: if you run this code, 
-    # Keep in mind the origin (x=0, y=0) is in the upper left in image processing
-    # you'll find these are not sensible values!!
-    # But you'll get a chance to play with them soon in a quiz ;)
-    left_bottom = [0, 539]
-    right_bottom = [900, 539]
-    left_top = [475, 310]
-    right_top = [530, 310]
+    image_output = grayscale(gray_image)
 
-    fit_left = np.polyfit((left_bottom[0], left_top[0]), (left_bottom[1], left_top[1]), 1)
-    fit_right = np.polyfit((right_bottom[0], right_top[0]), (right_bottom[1], right_top[1]), 1)
-    fit_bottom = np.polyfit((left_bottom[0], right_bottom[0]), (left_bottom[1], right_bottom[1]), 1)
-    fit_top = np.polyfit((left_top[0], right_top[0]), (left_top[1], right_top[1]), 1)
+    kernel_size = 5
+    blur_gray = cv2.GaussianBlur(gray,(kernel_size, kernel_size), 0)
 
-    # Mask pixels below the threshold
-    color_thresholds = (image[:,:,0] < rgb_threshold[0]) | \
-                        (image[:,:,1] < rgb_threshold[1]) | \
-                        (image[:,:,2] < rgb_threshold[2])
+    image_output = gaussian_blur(image_output, 5)
 
-    # Find the region inside the lines
-    XX, YY = np.meshgrid(np.arange(0, xsize), np.arange(0, ysize))
-    region_thresholds = (YY > (XX*fit_left[0] + fit_left[1])) & \
-                        (YY > (XX*fit_right[0] + fit_right[1])) & \
-                        (YY < (XX*fit_bottom[0] + fit_bottom[1])) & \
-                        (YY > (XX*fit_top[0] + fit_top[1]))
+    # Define our parameters for Canny and apply
+    low_threshold = 50
+    high_threshold = 150
+    edges = cv2.Canny(blur_gray, low_threshold, high_threshold)
+
+    image_output = canny(image_output, 85, 170)
+    # Next we'll create a masked edges image using cv2.fillPoly()
+    mask = np.zeros_like(edges)   
+    ignore_mask_color = (255, 255, 255)
+
+    # # This time we are defining a four sided polygon to mask
+    # imshape = image.shape
+    vertices = np.array([[(80, 539),(470, 300), (495, 300), (900, 539)]], dtype=np.int32)
+    cv2.fillPoly(mask, vertices, ignore_mask_color)
+    masked_edges = cv2.bitwise_and(edges, mask)
 
 
-    # region = region_of_interest(image, np.int32([np.array([[100,539], [450, 300], [490, 300], [900,539]])]))
-    # print('This region is:', type(region), 'with dimesions:', region)
+    # Define the Hough transform parameters
+    # Make a blank the same size as our image to draw on
+    rho = 1 # distance resolution in pixels of the Hough grid
+    theta = np.pi/180 # angular resolution in radians of the Hough grid
+    threshold = 15     # minimum number of votes (intersections in Hough grid cell)
+    min_line_length = 15 #minimum number of pixels making up a line
+    max_line_gap = 5  # maximum gap in pixels between connectable line segments
+    line_image = np.copy(image)*0 # creating a blank to draw lines on
 
-    # Mask color selection
-    color_select[color_thresholds] = [0,0,0]
-    # Find where image is both colored right and in the region
-    line_image[~color_thresholds & region_thresholds] = [255,0,0]
+    # Run Hough on edge detected image
+    # Output "lines" is an array containing endpoints of detected line segments
+    lines = cv2.HoughLinesP(masked_edges, rho, theta, threshold, np.array([]),
+                                min_line_length, max_line_gap)
 
-    return line_image
+    # lines = hough_lines(image_output, rho, theta, threshold, min_line_length, max_line_gap)
+    # print(lines)
+    image_output = draw_lines(color_select, lines, [255,0,0], 2)
+
+    # Iterate over the output "lines" and draw lines on a blank image
+    # for line in lines:
+    #     for x1,y1,x2,y2 in line:
+    #         cv2.line(line_image,(x1,y1),(x2,y2),(255,0,0),2)
+
+    # Create a "color" binary image to combine with line image
+    color_edges = np.dstack((edges, edges, edges)) 
+    # color edges is the canny images
+
+    # return color_edges
+
+    # Draw the lines on the edge image
+    lines_edges = cv2.addWeighted(color_select, 0.8, line_image, 1, 0)
+    # masked_edges = region_of_interest(lines_edges, vertices)
+
+    return lines_edges
+
+# image = mpimg.imread('test_images/solidWhiteRight.jpg')
+# image_output = process_image(image)
+# cv2.imwrite("./test.jpg", image_output)
 
 white_output = 'white.mp4'
 clip1 = VideoFileClip("solidWhiteRight.mp4")
