@@ -127,20 +127,24 @@ def process_image(image):
     gray_image = np.copy(image)
     gray = grayscale(gray_image)
 
-    kernel_size = 5
+    kernel_size = 7
     blur_gray = gaussian_blur(gray, kernel_size)
     # image_output = gaussian_blur(image_output, 5)
 
     # Define our parameters for Canny and apply
-    low_threshold = 30
-    high_threshold = 170
+    # low_threshold = 97
+    # high_threshold = 130
+    low_threshold = 80
+    high_threshold = 160
+    # low_threshold = 65
+    # high_threshold = 195
     # edges = cv2.Canny(blur_gray, low_threshold, high_threshold)
 
     # cv2.imwrite("./test_edges.jpg", edges)
 
     edges = canny(blur_gray, low_threshold, high_threshold)
 
-    vertices = np.array([[(80, 539),(465, 317), (495, 317), (900, 539)]], dtype=np.int32)
+    vertices = np.array([[(70, 539),(465, 317), (495, 317), (900, 539)]], dtype=np.int32)
     masked_edges = region_of_interest(edges, vertices)
 
 
@@ -151,36 +155,16 @@ def process_image(image):
     threshold = 24     # minimum number of votes (intersections in Hough grid cell)
     min_line_length = 1 #minimum number of pixels making up a line
     max_line_gap = 325  # maximum gap in pixels between connectable line segments
-    line_image = np.copy(image)*0 # creating a blank to draw lines on
+    # line_image = np.copy(image)*0 # creating a blank to draw lines on
 
     # Run Hough on edge detected image
     # Output "lines" is an array containing endpoints of detected line segments
     lines = cv2.HoughLinesP(masked_edges, rho, theta, threshold, np.array([]),
                                 min_line_length, max_line_gap)
 
-    # lines = hough_lines(image_output, rho, theta, threshold, min_line_length, max_line_gap)
-    # print(lines)
-    draw_lines(color_select, lines, [247,0,0], 6)
-
-    cv2.imwrite("./test_image_output.jpg", color_select)
-
-    return color_select
-
-    # Iterate over the output "lines" and draw lines on a blank image
-    # for line in lines:
-    #     for x1,y1,x2,y2 in line:
-    #         cv2.line(line_image,(x1,y1),(x2,y2),(255,0,0),2)
-
-    # Create a "color" binary image to combine with line image
-    # color_edges = np.dstack((edges, edges, edges))
-
-    # cv2.imwrite("./test_color_edges.jpg", color_edges)
-    # color edges is the canny images
-
-    # return color_edges
-
+    line_image = hough_lines(masked_edges, rho, theta, threshold, min_line_length, max_line_gap)
     # Draw the lines on the edge image
-    lines_edges = cv2.addWeighted(color_select, 0.5, line_image, 4, 0)
+    lines_edges = cv2.addWeighted(color_select, 1, line_image, 1, 0)
     # masked_edges = region_of_interest(lines_edges, vertices)
 
     return lines_edges
