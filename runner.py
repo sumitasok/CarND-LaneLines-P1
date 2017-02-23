@@ -132,32 +132,28 @@ def process_image(image):
     kernel_size = 5
     blur_gray = cv2.GaussianBlur(gray,(kernel_size, kernel_size), 0)
 
-    image_output = gaussian_blur(image_output, 5)
+
+    cv2.imwrite("./test_blur_grey.jpg", blur_gray)
+    # image_output = gaussian_blur(image_output, 5)
 
     # Define our parameters for Canny and apply
-    low_threshold = 50
-    high_threshold = 150
+    low_threshold = 30
+    high_threshold = 170
     edges = cv2.Canny(blur_gray, low_threshold, high_threshold)
 
-    image_output = canny(image_output, 85, 170)
-    # Next we'll create a masked edges image using cv2.fillPoly()
-    mask = np.zeros_like(edges)   
-    ignore_mask_color = (255, 255, 255)
+    cv2.imwrite("./test_edges.jpg", edges)
 
-    # # This time we are defining a four sided polygon to mask
-    # imshape = image.shape
-    vertices = np.array([[(80, 539),(470, 300), (495, 300), (900, 539)]], dtype=np.int32)
-    cv2.fillPoly(mask, vertices, ignore_mask_color)
-    masked_edges = cv2.bitwise_and(edges, mask)
+    vertices = np.array([[(80, 539),(465, 317), (495, 317), (900, 539)]], dtype=np.int32)
+    masked_edges = region_of_interest(edges, vertices)
 
 
     # Define the Hough transform parameters
     # Make a blank the same size as our image to draw on
     rho = 1 # distance resolution in pixels of the Hough grid
     theta = np.pi/180 # angular resolution in radians of the Hough grid
-    threshold = 15     # minimum number of votes (intersections in Hough grid cell)
-    min_line_length = 15 #minimum number of pixels making up a line
-    max_line_gap = 5  # maximum gap in pixels between connectable line segments
+    threshold = 24     # minimum number of votes (intersections in Hough grid cell)
+    min_line_length = 1 #minimum number of pixels making up a line
+    max_line_gap = 325  # maximum gap in pixels between connectable line segments
     line_image = np.copy(image)*0 # creating a blank to draw lines on
 
     # Run Hough on edge detected image
@@ -167,7 +163,11 @@ def process_image(image):
 
     # lines = hough_lines(image_output, rho, theta, threshold, min_line_length, max_line_gap)
     # print(lines)
-    image_output = draw_lines(color_select, lines, [255,0,0], 2)
+    draw_lines(color_select, lines, [247,0,0], 6)
+
+    cv2.imwrite("./test_image_output.jpg", color_select)
+
+    return color_select
 
     # Iterate over the output "lines" and draw lines on a blank image
     # for line in lines:
@@ -175,16 +175,19 @@ def process_image(image):
     #         cv2.line(line_image,(x1,y1),(x2,y2),(255,0,0),2)
 
     # Create a "color" binary image to combine with line image
-    color_edges = np.dstack((edges, edges, edges)) 
+    # color_edges = np.dstack((edges, edges, edges))
+
+    # cv2.imwrite("./test_color_edges.jpg", color_edges)
     # color edges is the canny images
 
     # return color_edges
 
     # Draw the lines on the edge image
-    lines_edges = cv2.addWeighted(color_select, 0.8, line_image, 1, 0)
+    lines_edges = cv2.addWeighted(color_select, 0.5, line_image, 4, 0)
     # masked_edges = region_of_interest(lines_edges, vertices)
 
     return lines_edges
+
 
 # image = mpimg.imread('test_images/solidWhiteRight.jpg')
 # image_output = process_image(image)
