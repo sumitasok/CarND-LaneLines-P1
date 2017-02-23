@@ -125,15 +125,10 @@ def process_image(image):
     line_image = np.copy(image)
 
     gray_image = np.copy(image)
-    gray = cv2.cvtColor(gray_image, cv2.COLOR_RGB2GRAY)
-
-    image_output = grayscale(gray_image)
+    gray = grayscale(gray_image)
 
     kernel_size = 5
-    blur_gray = cv2.GaussianBlur(gray,(kernel_size, kernel_size), 0)
-
-
-    cv2.imwrite("./test_blur_grey.jpg", blur_gray)
+    blur_gray = gaussian_blur(gray, kernel_size)
     # image_output = gaussian_blur(image_output, 5)
 
     # Define our parameters for Canny and apply
