@@ -56,7 +56,7 @@ def region_of_interest(img, vertices):
     return masked_image
 
 
-def draw_lines(img, lines, color=[255, 0, 0], thickness=2):
+def draw_lines(img, lines, color=[255, 0, 0], thickness=7):
     """
     NOTE: this is the function you might want to use as a starting point once you want to 
     average/extrapolate the line segments you detect to map out the full
@@ -74,8 +74,49 @@ def draw_lines(img, lines, color=[255, 0, 0], thickness=2):
     this function with the weighted_img() function below
     """
     for line in lines:
+        # sl = 0
+        # sr = 0
         for x1,y1,x2,y2 in line:
+        #     print(x1, y1, x2, y2)
+        #     # if y2 > 470 & x2 < 350:
+        #     #     x2 = x2 + (539 - y2)
+        #     #     y2 = 539
+        #     if (x1 > x2):
+        #         # slanding left
+        #         sl += 1
+        #         x1 =  ((317 - y1)/(y2 - y1))* (x2 - x1) + x1
+        #         y1 = 317
+        #         x1 =  ((538 - y1)/(y2 - y1))* (x2 - x1) + x1
+        #         y2 = 538
+        #     else:
+        #         # slanding right
+        #         sr += 1
+        #         x1 =  ((538 - y1)/(y2 - y1))* (x2 - x1) + x1
+        #         y1 = 538
+        #         x1 =  ((317 - y1)/(y2 - y1))* (x2 - x1) + x1
+        #         y2 = 317
+            # if(x1 > 495 and x2 > 495):
+            #     print("entered >")
+            #     x2 = x2 + (539 - y2)
+            #     y2 = 539
+            #     if (y1 > 317):
+            #         # print(y1)
+            #         x1 = x1 - (y1 - 317)
+            #         y1 = 317
+            #         # print(y1)
+
+            # if(x1 < 485 and x2 < 485):
+            #     print("entered <")
+            #     x1 = x1 - (539 - y1)
+            #     y1 = 539
+            #     if (y2 > 317):
+            #         print("entered y2 >")
+            #         x2 = x2 + (y2 - 317)
+            #         y2 = 317
+            # print(x1, y1, x2, y2)
             cv2.line(img, (x1, y1), (x2, y2), color, thickness)
+
+# def sanitize_xy_coordinates(x1, y1, x2, y2):
 
 def hough_lines(img, rho, theta, threshold, min_line_len, max_line_gap):
     """
@@ -122,13 +163,15 @@ def process_image(image):
     ysize = image.shape[0]
     xsize = image.shape[1]
     color_select= np.copy(image)
-    line_image = np.copy(image)
 
     gray_image = np.copy(image)
     gray = grayscale(gray_image)
 
+    cv2.imwrite("./tmp/grascale.jpg", gray)
+
     kernel_size = 7
     blur_gray = gaussian_blur(gray, kernel_size)
+    cv2.imwrite("./tmp/gaussian_blur.jpg", blur_gray)
     # image_output = gaussian_blur(image_output, 5)
 
     # Define our parameters for Canny and apply
@@ -143,9 +186,11 @@ def process_image(image):
     # cv2.imwrite("./test_edges.jpg", edges)
 
     edges = canny(blur_gray, low_threshold, high_threshold)
+    cv2.imwrite("./tmp/canny.jpg", edges)
 
     vertices = np.array([[(70, 539),(465, 317), (495, 317), (900, 539)]], dtype=np.int32)
     masked_edges = region_of_interest(edges, vertices)
+    cv2.imwrite("./tmp/region_of_interest.jpg", masked_edges)
 
 
     # Define the Hough transform parameters
@@ -167,14 +212,16 @@ def process_image(image):
     lines_edges = cv2.addWeighted(color_select, 1, line_image, 1, 0)
     # masked_edges = region_of_interest(lines_edges, vertices)
 
+    cv2.imwrite("./tmp/result.jpg", lines_edges)
+
     return lines_edges
 
 
-# image = mpimg.imread('test_images/solidWhiteRight.jpg')
-# image_output = process_image(image)
-# cv2.imwrite("./test.jpg", image_output)
+image = mpimg.imread('test_images/solidWhiteRight.jpg')
+image_output = process_image(image)
+cv2.imwrite("./test.jpg", image_output)
 
-white_output = 'white.mp4'
-clip1 = VideoFileClip("solidWhiteRight.mp4")
-white_clip = clip1.fl_image(process_image) #NOTE: this function expects color images!!
-white_clip.write_videofile(white_output, audio=False)
+# white_output = 'yellow.mp4'
+# clip1 = VideoFileClip("solidYellowLeft.mp4")
+# white_clip = clip1.fl_image(process_image) #NOTE: this function expects color images!!
+# white_clip.write_videofile(white_output, audio=False)
