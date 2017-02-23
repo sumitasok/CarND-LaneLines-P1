@@ -134,9 +134,11 @@ def process_image(image):
     # Define our parameters for Canny and apply
     low_threshold = 30
     high_threshold = 170
-    edges = cv2.Canny(blur_gray, low_threshold, high_threshold)
+    # edges = cv2.Canny(blur_gray, low_threshold, high_threshold)
 
-    cv2.imwrite("./test_edges.jpg", edges)
+    # cv2.imwrite("./test_edges.jpg", edges)
+
+    edges = canny(blur_gray, low_threshold, high_threshold)
 
     vertices = np.array([[(80, 539),(465, 317), (495, 317), (900, 539)]], dtype=np.int32)
     masked_edges = region_of_interest(edges, vertices)
